@@ -5,7 +5,7 @@ Created on Nov 27, 2012
 '''
 
 import sys
-import time
+import time, math
 from bzrc import BZRC, Command, Answer
 
 from kalmanagent import Agent
@@ -24,13 +24,28 @@ def main():
     #bzrc = BZRC(host, int(port), debug=True)
     bzrc = BZRC(host, int(port))
 
+    tick_count = 1
+
     agent = Agent(bzrc)
+
+    diff = []
 
     # Run the agent
     try:
-        while True: 
+        while True:
+            #start = time.time()
+            if tick_count == agent.step_size - agent.buffer:
+                agent.fire = True
+                tick_count = 1
+            else:
+                agent.fire = False 
             agent.tick()
-                    
+            tick_count += 1
+            #end = time.time()
+            #diff.append(float(end - start))
+            #if tick_count == 20:
+            #    print "average time in a tick: %.2f" % (sum(diff)/len(diff))
+        
     except KeyboardInterrupt:
         print "Exiting due to keyboard interrupt."
         bzrc.close()

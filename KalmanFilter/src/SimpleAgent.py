@@ -11,6 +11,8 @@ import random
 
 from bzrc import BZRC, Command
 
+from anglecalc import computeAngle
+
 class Agent(object):
     """Class handles all command and control logic for a teams tanks."""
 
@@ -18,12 +20,22 @@ class Agent(object):
         self.bzrc = bzrc
         self.constants = self.bzrc.get_constants()
         self.commands = []
-        self.speed = 1
+        self.speed = 1#random.uniform(0.1, 1.5)
         
     def tick(self):
         """Some time has passed; decide what to do next."""
         mytanks, othertanks, flags, shots = self.bzrc.get_lots_o_stuff()
         self.mytanks = mytanks
+
+        if self.mytanks[0].flag != '-':
+            self.speed = -1 
+        else:
+            if self.speed < 0:
+                self.speed = 1#random.uniform(0.1, 1.5)
+
+        if self.mytanks[0].status == 'dead':
+            self.speed = 1#random.uniform(0.1, 1.5)
+            
 
         self.commands = []
 
@@ -34,7 +46,8 @@ class Agent(object):
         
     def move_forward(self, tank):
         """ Tanks move forward. """
-        command = Command(tank.index, self.speed, 0, True)
+        angle = computeAngle(400, tank.y, -400, tank.x, tank.angle)
+        command = Command(tank.index, self.speed, 2*angle, True)
         self.commands.append(command)
 
 def main():
