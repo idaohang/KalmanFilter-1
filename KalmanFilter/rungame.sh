@@ -1,13 +1,13 @@
 choice=$1
 
-choice="sitting"
+choice="straight"
 
 make --directory=src/
 
 
 if [ "$choice"  = "sitting" ] ; then 
 
-	../../bzrflag/bin/bzrflag --world=../../bzrflag/maps/empty.bzw --friendly-fire --red-port=50100 --red-tanks=1 --green-port=50101 --green-tanks=0 --purple-port=50102 --purple-tanks=1 --blue-port=50103 --blue-tanks=0 $@ &
+	../../bzrflag/bin/bzrflag --world=../../bzrflag/maps/empty.bzw --friendly-fire --default-posnoise=5 --red-port=50100 --red-tanks=1 --green-port=50101 --green-tanks=0 --purple-port=50102 --purple-tanks=1 --blue-port=50103 --blue-tanks=0 $@ &
 	
 	sleep 2
 

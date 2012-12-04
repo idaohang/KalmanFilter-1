@@ -5,7 +5,8 @@ from Cython.Distutils import build_ext
 ext_modules = [Extension("kalmanagent", ["KalmanAgent.pyx"]), \
                Extension("bzrc", ["bzrc.pyx"]), \
                Extension("kalmancalc", ["MatrixCalc.pyx"]), \
-               Extension("anglecalc", ["AngleCalc.pyx"], libraries=["m"])]
+               Extension("anglecalc", ["AngleCalc.pyx"], libraries=["m"]),\
+               Extension("shootingcalc", ["ShootingCalc.pyx"])]
 
 setup(
   name = 'Kalman Filter App',

@@ -10,6 +10,8 @@ from bzrc import BZRC, Command, Answer
 
 from kalmanagent import Agent
 
+from shootingcalc import check_criterion
+
 def main():
     # Process CLI arguments.
     try:
@@ -24,23 +26,31 @@ def main():
     #bzrc = BZRC(host, int(port), debug=True)
     bzrc = BZRC(host, int(port))
 
-    tick_count = 1
-
     agent = Agent(bzrc)
 
-    diff = []
+    burn_in = 0
 
     # Run the agent
     try:
         while True:
             #start = time.time()
-            if tick_count == agent.step_size - agent.buffer:
-                agent.fire = True
-                tick_count = 1
+
+            if agent.tick_count > agent.step_size:
+                agent.tick_count = 1
+
+            if burn_in < agent.burn_in:
+                burn_in += 1
             else:
-                agent.fire = False 
+                if check_criterion(agent.step_size, agent.buffer, agent.tick_count):
+                    agent.fire = True
+                    agent.tick_count = 1
+                else:
+                    agent.fire = False
+                     
+                agent.tick_count += 1
+                
             agent.tick()
-            tick_count += 1
+
             #end = time.time()
             #diff.append(float(end - start))
             #if tick_count == 20:

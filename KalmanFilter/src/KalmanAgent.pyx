@@ -32,7 +32,7 @@ ctypedef np.float64_t DOUBLE_t
 import pprint
 
 from kalmancalc import predict, update, future_prediction
-from anglecalc import computeAngle
+from anglecalc import computeAngle, calc_timing
 
 class Agent(object):
     """Class handles all command and control logic for a teams tanks."""
@@ -44,16 +44,16 @@ class Agent(object):
         self.constants = self.bzrc.get_constants()
         self.speed = 0
         self.tick_count = 0
-        self.bullet_speed = 70
-        self.sec_per_tick = 0.1
-        #self.burn_in = 50
-        self.Sx_pos = 0.1
+        self.bullet_speed = 100  
+        self.sec_per_tick = 0.1 # approximate
+        self.burn_in = 50
+        self.Sx_pos = 0.5
         self.Sx_accel = 0.01
         self.c = 0 # friction constant (can be 0)
         self.figure_counter = 1
         self.delta_t = 0.5
-        self.step_size = 40
-        self.buffer = 17
+        self.step_size = 50
+        self.buffer = 40
         self.plot = False
         self.fire = False
         # experimental: do we need vel and accel??
@@ -220,27 +220,28 @@ class Agent(object):
             self.enemy = (tank.x, tank.y)
         #    print "enemy position: %d, %d" % (tank.x, tank.y)
 
-        for tank in self.mytanks:
-            self.mu_hat, self.S_hat = predict(self.F, self.mu, self.St, self.FT, self.Sx)
-            #self.predict()
-            #self.update()
-            self.get_observation()
-            self.K, self.mu, self.St = update(self.z, \
-                                              self.H, self.mu_hat, self.S_hat, \
-                                              self.HT, self.Sz)
-
-            self.predicted_mu = future_prediction(self.F, self.mu.copy(), self.step_size - self.tick_count)
-            self.get_direction()
-
+        if self.othertanks[0].status != 'dead':
+            for tank in self.mytanks:
+                self.mu_hat, self.S_hat = predict(self.F, self.mu, self.St, self.FT, self.Sx)
+                #self.predict()
+                #self.update()
+                self.get_observation()
+                self.K, self.mu, self.St = update(self.z, \
+                                                  self.H, self.mu_hat, self.S_hat, \
+                                                  self.HT, self.Sz)
+    
+                self.predicted_mu = future_prediction(self.F, self.mu.copy(), self.step_size - self.tick_count)
+                self.get_direction()
+    
+                if self.plot:
+                    if self.tick_count % 50 == 0:
+                        self.density_plot()
+                
+                #self.tick_count += 1
+    
             if self.plot:
-                if self.tick_count % 50 == 0:
-                    self.density_plot()
-            
-            self.tick_count += 1
-
-        if self.plot:
-            if self.othertanks[0].status == 'dead':
-                plt.show()
+                if self.othertanks[0].status == 'dead':
+                    plt.show()
 
         #for tank in self.mytanks:
             #self.prev_t = time.time()
@@ -370,14 +371,20 @@ class Agent(object):
         #cdef double angle = self.compute_angle()
         cdef double target_y, target_x 
 
-        if self.fire:
-            target_y = self.mu[3,0] 
-            target_x = self.mu[0,0]
-            self.tick_count = 0 
-        else:
-            #print "mu.x: %.2f   mu.y: %.2f   p_mu.x: %.2f   p_mu.y: %.2f" % (self.mu[0,0], self.mu[3,0], self.predicted_mu[0,0], self.predicted_mu[3,0])    
+        #if self.fire:
+            #target_y = self.mu[3,0] 
+            #target_x = self.mu[0,0]
+            #self.tick_count = 0 
+        if not self.fire:
+            #print "mu.x: %.2f   mu.y: %.2f   p_mu.x: %.2f   p_mu.y: %.2f" % (self.mu[0,0], self.mu[3,0], self.predicted_mu[0,0], self.predicted_mu[3,0])
             target_y = self.predicted_mu[3,0] 
             target_x = self.predicted_mu[0,0] 
+            self.buffer, self.step_size = calc_timing(self.step_size, self.sec_per_tick, self.bullet_speed, \
+                                      target_x, target_y, self.mytanks[0].x, \
+                                      self.mytanks[0].y)
+            print "buffer: %d" % self.buffer
+            print "tick: %d" % self.tick_count
+            print "step_size - buffer: %d" % (self.step_size - self.buffer)
 #        cdef double target_y = self.mu[3,0] + self.mu[4,0] * self.delta_t * 22.0
 #        cdef double target_x = self.mu[0,0] + self.mu[1,0] * self.delta_t * 22.0
         cdef double angle = computeAngle(target_y, self.mytanks[0].y, 
